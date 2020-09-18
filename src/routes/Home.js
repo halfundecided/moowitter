@@ -1,29 +1,41 @@
 import { dbService } from "fbase";
 import React, { useState, useEffect } from "react";
+import Mooweet from "components/Mooweet";
 
-const Home = () => {
+const Home = ({ userObj }) => {
   const [mooweet, setMooweet] = useState("");
   const [mooweets, setMooweets] = useState([]);
-  const getMooweets = async () => {
-    const dbmooweets = await dbService.collection("mooweets").get();
-    dbmooweets.forEach((document) => {
-      const mooweetObject = {
-        ...document.data(),
-        id: document.id,
-      };
-      // add new one to existing list
-      setMooweets((prev) => [mooweetObject, ...prev]);
-    });
-  };
+  /* Old version of getting document */
+  // const getMooweets = async () => {
+  //   const dbmooweets = await dbService.collection("mooweets").get();
+  //   dbmooweets.forEach((document) => {
+  //     const mooweetObject = {
+  //       ...document.data(),
+  //       id: document.id,
+  //     };
+  //     // add new one to existing list
+  //     setMooweets((prev) => [mooweetObject, ...prev]);
+  //   });
+  // };
+  /* Real Time: Render less */
   useEffect(() => {
-    getMooweets();
+    // getMooweets();
+    // listen to any operation/changes on database
+    dbService.collection("mooweets").onSnapshot((snapshot) => {
+      const mooweetArray = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMooweets(mooweetArray);
+    });
   }, []);
   const onSubmit = async (event) => {
     event.preventDefault();
     // create Document on firebase database
     await dbService.collection("mooweets").add({
-      mooweet,
+      text: mooweet,
       createdAt: Date.now(),
+      creatorId: userObj.uid,
     });
     setMooweet("");
   };
@@ -33,7 +45,7 @@ const Home = () => {
     } = event;
     setMooweet(value);
   };
-  console.log(mooweets);
+
   return (
     <div>
       <form onSubmit={onSubmit}>
@@ -48,9 +60,11 @@ const Home = () => {
       </form>
       <div>
         {mooweets.map((mooweet) => (
-          <div key={mooweet.id}>
-            <h4>{mooweet.mooweet}</h4>
-          </div>
+          <Mooweet
+            key={mooweet.id}
+            mooweetObj={mooweet}
+            isOwner={mooweet.creatorId === userObj.uid}
+          />
         ))}
       </div>
     </div>
