@@ -1,12 +1,10 @@
-import React from "react";
-import MoowitterRouter from "./Router";
+import React, { useState } from "react";
+import MoowitterRouter from "components/Router";
+import { authService } from "fbase";
 
 function App() {
-  return (
-    <div>
-      <MoowitterRouter />
-    </div>
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState(authService.currentUser);
+  return <MoowitterRouter isLoggedIn={isLoggedIn} />;
 }
 
 export default App;
